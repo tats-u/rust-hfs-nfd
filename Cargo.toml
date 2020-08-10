@@ -1,13 +1,13 @@
 [package]
 name = "hfs_nfd"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Tatsunori Uchino <tats.u@live.jp>"]
 edition = "2018"
 license = "MIT"
 readme = "README.md"
 repository = "https://github.com/tats-u/rust-hfs-nfd/"
 description = "Handle Apple's unique NFD-like Unicode normalization, which is used in HFS+, in Rust."
-categories = ["encodings", "text-processing"]
+categories = ["encoding", "text-processing"]
 keywords = ["hfs", "apple", "encoding", "unicode", "normalization"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
