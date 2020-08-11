@@ -24,7 +24,7 @@ Add this library `hfs_nfd` to your `Cargo.toml`.
 another_library1 = "<version>"
 another_library2 = "<version>"
 # *snip*
-hfs_nfd = "0.1.1" # <= Here
+hfs_nfd = "1.0.0" # <= Here
 # *snip*
 ```
 
@@ -36,17 +36,3 @@ use hfs_nfd::{compose_from_hfs_nfd,decompose_into_hfs_nfd}
 assert_eq!(decompose_into_hfs_nfd("Universit\u{00E9}"), "Universite\u{0301}".to_string());
 assert_eq!(compose_from_hfs_nfd("アッフ\u{309A}ル"), "アッ\{30D7}ル".to_string());
 ```
-
-# Restrictions
-
-In HFS+, Korean Hangul characters are also composed or decomposed in the way other than what is listed on the table.
-
-> In addition, the Korean Hangul characters with codes in the range u+AC00 through u+D7A3 are illegal and must be replaced with the equivalent sequence of conjoining jamos, as described in the Unicode 2.0 book, section 3.10.
-
-I've not implemented it yet.
-
-Please don't hasitate to send a PR on this if you feel inconvenience. These pages may be help you:
-
-- https://www.unicode.org/versions/Unicode13.0.0/ch03.pdf
-- https://www.unicode.org/versions/Unicode2.0.0/ch03.pdf
-- https://en.wikipedia.org/wiki/Hangul_Jamo_(Unicode_block)

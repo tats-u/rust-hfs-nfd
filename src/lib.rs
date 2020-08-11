@@ -1,8 +1,13 @@
 mod code_table;
 #[cfg(test)]
 mod code_table_test;
+mod hangul;
 mod reverse_tree;
 use code_table::{MAP_TO_HFS, MAP_TO_NORMAL};
+use hangul::{
+    compose_hangul_jamos, decomopse_hangul_syllable, is_hangul_conjoinable_jamo,
+    is_hangul_precomposed_syllable,
+};
 use reverse_tree::ReverseTreeNode;
 use std::borrow::Cow;
 
@@ -11,9 +16,9 @@ use std::borrow::Cow;
 /// # Arguments
 ///
 /// * `input` - A string to be decomposed
-/// 
+///
 /// # Examples
-/// 
+///
 /// ```
 /// use hfs_nfd::decompose_into_hfs_nfd;
 /// assert_eq!(&decompose_into_hfs_nfd("Pok\u{00E9}mon"), "Poke\u{0301}mon");
@@ -24,7 +29,13 @@ pub fn decompose_into_hfs_nfd<'a, S: Into<Cow<'a, str>>>(input: S) -> String {
 
     for c in input.chars() {
         match MAP_TO_HFS.get(&c) {
-            None => result.push(c),
+            None => {
+                if is_hangul_precomposed_syllable(c) {
+                    result += &decomopse_hangul_syllable(c).into_boxed_str();
+                } else {
+                    result.push(c);
+                }
+            }
             Some(&decomposed) => result += decomposed,
         }
     }
@@ -32,13 +43,13 @@ pub fn decompose_into_hfs_nfd<'a, S: Into<Cow<'a, str>>>(input: S) -> String {
 }
 
 /// Restores a commonly encoded string from one applied the Unicode decomposition similar to NFS used in HFS+ to
-/// 
+///
 /// # Arguments
-/// 
+///
 /// * `input` - A string to be restored from
-/// 
+///
 /// # Examples
-/// 
+///
 /// ```
 /// use hfs_nfd::compose_from_hfs_nfd;
 /// assert_eq!(&compose_from_hfs_nfd("Poke\u{0301}mon"), "Pok\u{00E9}mon");
@@ -48,6 +59,7 @@ pub fn compose_from_hfs_nfd<'a, S: Into<Cow<'a, str>>>(input: S) -> String {
     let mut result = String::new();
     let mut referencing_dict = &*MAP_TO_NORMAL;
     let mut pending_chars = String::new();
+    let mut pending_hangul_jamos = String::new();
     let mut tentative_determined_chars: Option<Box<String>> = None;
     let mut tentative_composed = None;
 
@@ -61,12 +73,20 @@ pub fn compose_from_hfs_nfd<'a, S: Into<Cow<'a, str>>>(input: S) -> String {
                 }) => {
                     let mut try_again = false;
                     if let Some(ch) = tentative_composed {
+                        if !pending_hangul_jamos.is_empty() {
+                            result += &compose_hangul_jamos(&pending_hangul_jamos).into_boxed_str();
+                            pending_hangul_jamos.clear();
+                        }
                         result.push(ch);
                         tentative_composed = None;
                         try_again = true;
                         tentative_determined_chars = None;
                     }
                     if !pending_chars.is_empty() {
+                        if !pending_hangul_jamos.is_empty() {
+                            result += &compose_hangul_jamos(&pending_hangul_jamos).into_boxed_str();
+                            pending_hangul_jamos.clear();
+                        }
                         result += &pending_chars;
                         try_again = true;
                         pending_chars.clear();
@@ -75,7 +95,18 @@ pub fn compose_from_hfs_nfd<'a, S: Into<Cow<'a, str>>>(input: S) -> String {
                     if try_again {
                         continue;
                     }
-                    result.push(c);
+                    // Out of the Apple's table
+
+                    // Korean hangul jamo
+                    if is_hangul_conjoinable_jamo(c) {
+                        pending_hangul_jamos.push(c);
+                    } else {
+                        if !pending_hangul_jamos.is_empty() {
+                            result += &compose_hangul_jamos(&pending_hangul_jamos).into_boxed_str();
+                            pending_hangul_jamos.clear();
+                        }
+                        result.push(c);
+                    }
                     break;
                 }
                 Some(ReverseTreeNode {
@@ -108,6 +139,10 @@ pub fn compose_from_hfs_nfd<'a, S: Into<Cow<'a, str>>>(input: S) -> String {
                     current: Some(composed_char),
                     next: None,
                 }) => {
+                    if !pending_hangul_jamos.is_empty() {
+                        result += &compose_hangul_jamos(&pending_hangul_jamos).into_boxed_str();
+                        pending_hangul_jamos.clear();
+                    }
                     pending_chars.clear();
                     result.push(*composed_char);
                     tentative_composed = None;
@@ -120,6 +155,9 @@ pub fn compose_from_hfs_nfd<'a, S: Into<Cow<'a, str>>>(input: S) -> String {
     }
     if let Some(c) = tentative_composed {
         result.push(c);
+    }
+    if !pending_hangul_jamos.is_empty() {
+        result += &compose_hangul_jamos(&pending_hangul_jamos).into_boxed_str();
     }
     if !pending_chars.is_empty() {
         result += &pending_chars;
@@ -146,7 +184,11 @@ mod tests {
             ),
             ("σου πονηρὸς ᾖ ὅλον τὸ", "σου πονηρ\u{03BF}\u{0300}ς \u{03B7}\u{0345}\u{0313}\u{0342} \u{03BF}\u{0314}\u{0301}λον τ\u{03BF}\u{0300}"),
             ("Université", "Université"),
-            ("D:\\‰{'é“H'ê\\−w›ï”'\\fiúŒ{ŠÕ'°ŒÆ›u−w›ï\\vol.27-no.5 ... - J-Stage", "D:\\‰{\'e\u{301}“H\'e\u{302}\\−w›i\u{308}”\'\\fiu\u{301}Œ{S\u{30c}O\u{303}\'°ŒÆ›u−w›i\u{308}\\vol.27-no.5 ... - J-Stage")
+            ("D:\\‰{'é“H'ê\\−w›ï”'\\fiúŒ{ŠÕ'°ŒÆ›u−w›ï\\vol.27-no.5 ... - J-Stage", "D:\\‰{\'e\u{301}“H\'e\u{302}\\−w›i\u{308}”\'\\fiu\u{301}Œ{S\u{30c}O\u{303}\'°ŒÆ›u−w›i\u{308}\\vol.27-no.5 ... - J-Stage"),
+            ("チョイ・ボンゲ(Choi Bounge / 최번개)", "チョイ・ボンゲ(Choi Bounge / 최번개)"),
+            ("ハン・ジュリ(Han Juri / 한주리)", "ハン・ジュリ(Han Juri / 한주리)"),
+            ("チョイ・ボンゲ최번개ハン・ジュリ한주리", "チョイ・ボンゲ최번개ハン・ジュリ한주리"),
+            ("か카ka아a에éゲ게gé", "か카ka아a에éゲ게gé")
         ];
         static ref EXAMINEE_IMMUTABLE: Vec<&'static str> = vec![
             "Immutable",
