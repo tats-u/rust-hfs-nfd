@@ -31,7 +31,7 @@ hfs_nfd = "1.0.0" # <= Here
 Then, use these functions:
 
 ```rust
-use hfs_nfd::{compose_from_hfs_nfd,decompose_into_hfs_nfd}
+use hfs_nfd::{compose_from_hfs_nfd,decompose_into_hfs_nfd};
 
 assert_eq!(decompose_into_hfs_nfd("Universit\u{00E9}"), "Universite\u{0301}".to_string());
 assert_eq!(compose_from_hfs_nfd("アッフ\u{309A}ル"), "アッ\{30D7}ル".to_string());
