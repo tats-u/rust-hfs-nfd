@@ -3,77 +3,12 @@ Python script to fetch Unicode decomposition table from https://developer.apple.
 and generate Rust source code to compose or decompose Unicode 
 """
 
-import re
-from html.parser import HTMLParser
-import requests
-from sys import stdout
+from sys import stdout, argv
 import json
-from collections import deque
-from datetime import datetime, timezone
+from pathlib import Path
 
 
-class FetchingDecompositionHTMLParser(HTMLParser):
-    def __init__(self):
-        super().__init__()
-        self.in_td = False
-        self.in_p = False
-        # {"(Unicode char)": "(decomposed chars)"}
-        self.encoding_dic = {}
-        # {"(element)": {"currnet": "(composed char)", "next": {(sub dictionary)}}}
-        self.decoding_dic = {}
-        self.overall_regex = re.compile(r"0x([0-9A-F]+)(?: 0x([0-9A-F]+))*")
-        self.one_regex = re.compile(r"0x([0-9A-F]+)")
-        self.char_to_be_composed = ""
-
-    def handle_starttag(self, tag, attrs):
-        """
-        Check the beginning of td & p tags
-        """
-        if tag.lower() == "td":
-            self.in_td = True
-        if tag.lower() == "p" and self.in_td:
-            self.in_p = True
-
-    def handle_endtag(self, tag):
-        """
-        Check the end of td & p tags
-        """
-        if tag.lower() == "td" and self.in_td:
-            self.in_td = False
-        if tag.lower() == "p" and self.in_p:
-            self.in_p = False
-
-    def handle_data(self, data):
-        if self.in_p and self.in_td:
-            overall_match = self.overall_regex.match(data)
-            if overall_match is not None:
-                codepoints = [
-                    chr(int(m[1], 16))
-                    for m in (
-                        self.one_regex.match(codepoint_str)
-                        for codepoint_str in data.split(" ")
-                    )
-                    if m is not None
-                ]
-                # decomposition definition
-                if len(codepoints) >= 2:
-                    self.encoding_dic[self.char_to_be_composed] = "".join(codepoints)
-                    self.decoding_dic.setdefault(
-                        codepoints[0], {"current": None, "next": {}}
-                    )
-                    d = self.decoding_dic[codepoints[0]]
-                    for c in codepoints[1:]:
-                        # `"current": None` may be overwritten later
-                        d["next"].setdefault(c, {"current": None, "next": {}})
-                        d = d["next"][c]
-                    d["current"] = self.char_to_be_composed
-                    self.char_to_be_composed = ""
-                # character to be decomposed
-                else:
-                    self.char_to_be_composed = codepoints[0]
-
-
-def print_pre(f=stdout):
+def print_pre(timestamp: str, f=stdout):
     """
     Generate and print the code before the definition of dictionaries
     """
@@ -82,10 +17,10 @@ def print_pre(f=stdout):
 //! Definition of Unicode decomposition dictionaries
 //!
 //! Generated based on https://developer.apple.com/library/archive/technotes/tn/tn1150table.html
-//! at {datetime.now(timezone.utc).isoformat(timespec="seconds")}
+//! fetched at {timestamp}
 
 use super::reverse_tree::ReverseTreeNode;
-use hashbrown::HashMap;
+use ahash::AHashMap;
 use lazy_static::lazy_static;
 lazy_static! """
         "{",
@@ -113,8 +48,8 @@ def print_encoding_dic(obj, f=stdout):
     /// ```ignore
     /// assert_eq!((*MAP_TO_HFS).get(&'\\u{00E9}').unwrap(), "e\\u{0301}");
     /// ```
-    pub static ref MAP_TO_HFS: HashMap<char, &'static str> = {
-        let mut map = HashMap::new();""",
+    pub static ref MAP_TO_HFS: AHashMap<char, &'static str> = {
+        let mut map = AHashMap::new();""",
         file=f,
     )
     for (compose, decompose) in obj.items():
@@ -133,7 +68,7 @@ def _print_de_(dic, var_name, f=stdout):
 
     Use recursion because the depth of recursive calls is limited.
     """
-    print(f"        let mut {var_name} = HashMap::new();", file=f)
+    print(f"        let mut {var_name} = AHashMap::new();", file=f)
     for char, result_obj in dic.items():
         char_hexcode = f"{ord(char):04x}"
         current = (
@@ -172,7 +107,7 @@ def print_decoding_dic(dic, f=stdout):
     /// ```ignore
     /// assert_eq!((*MAP_TO_NORMAL).get(&'e').unwrap().next.unwrap().get(&'\\u{0301}').unwrap().current.unwrap(), '\\u{00E9}');
     /// ```
-    pub static ref MAP_TO_NORMAL: HashMap<char, ReverseTreeNode> = {""",
+    pub static ref MAP_TO_NORMAL: AHashMap<char, ReverseTreeNode> = {""",
         file=f,
     )
     _print_de_(dic, "root", f)
@@ -180,13 +115,15 @@ def print_decoding_dic(dic, f=stdout):
 
 
 if __name__ == "__main__":
-    parser = FetchingDecompositionHTMLParser()
-    req = requests.get(
-        "https://developer.apple.com/library/archive/technotes/tn/tn1150table.html"
-    )
-    parser.feed(req.text)
-    with open("src/code_table.rs", "w", encoding="utf-8", newline="\n") as f:
-        print_pre(f)
-        print_encoding_dic(parser.encoding_dic, f)
-        print_decoding_dic(parser.decoding_dic, f)
+    root_dir = Path(argv[0]).parent
+    assets_dir = root_dir / "assets"
+    src_dir = root_dir / "src"
+
+    with (assets_dir / "hfs_table.json").open("r", encoding="UTF-8", newline="\n") as f:
+        hfs_table = json.load(f)
+    src_dir.mkdir(exist_ok=True)
+    with (src_dir / "code_table.rs").open("w", encoding="utf-8", newline="\n") as f:
+        print_pre(hfs_table["created"], f)
+        print_encoding_dic(hfs_table["encoding"], f)
+        print_decoding_dic(hfs_table["decoding"], f)
         print_post(f)
