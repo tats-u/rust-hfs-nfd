@@ -165,9 +165,7 @@ pub fn compose_from_hfs_nfd(input: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use lazy_static::lazy_static;
-    lazy_static! {
-        static ref EXAMINEE: Vec<(&'static str, &'static str)> = vec![
+    static EXAMINEE: &[(&'static str, &'static str)] = &[
             ("Pokémonポケモン", "Pokémonポケモン"),
             ("ポプテピピック", "ポプテピピック"),
             (
@@ -187,52 +185,51 @@ mod tests {
             ("チョイ・ボンゲ최번개ハン・ジュリ한주리", "チョイ・ボンゲ최번개ハン・ジュリ한주리"),
             ("か카ka아a에éゲ게gé", "か카ka아a에éゲ게gé")
         ];
-        static ref EXAMINEE_IMMUTABLE: Vec<&'static str> = vec![
-            "Immutable",
-            "Can't be changed",
-            "かわらない",
-            "ヘンカナシ",
-            "不変",
-        ];
-    }
+    static EXAMINEE_IMMUTABLE: &[&'static str] = &[
+        "Immutable",
+        "Can't be changed",
+        "かわらない",
+        "ヘンカナシ",
+        "不変",
+    ];
     #[test]
     fn decompose_fixed_strings_test() {
-        for (composed, decomposed) in EXAMINEE.iter() {
+        for (composed, decomposed) in EXAMINEE {
             let converted = decompose_into_hfs_nfd(*composed);
             assert_eq!(&converted, *decomposed);
         }
     }
     #[test]
     fn compose_from_fixed_strings_test() {
-        for (composed, decomposed) in EXAMINEE.iter() {
+        for (composed, decomposed) in EXAMINEE {
             let converted = compose_from_hfs_nfd(*decomposed);
             assert_eq!(&converted, *composed);
         }
     }
     #[test]
     fn compose_already_composed_fixed_strings_test() {
-        for (composed, _) in EXAMINEE.iter() {
+        for (composed, _) in EXAMINEE {
             let converted = compose_from_hfs_nfd(*composed);
             assert_eq!(&converted, *composed);
         }
     }
     #[test]
     fn decompose_already_deomposed_identity_fixed_strings_test() {
-        for (_, decomposed) in EXAMINEE.iter() {
+        for (_, decomposed) in EXAMINEE {
             let converted = decompose_into_hfs_nfd(*decomposed);
             assert_eq!(&converted, *decomposed);
         }
     }
     #[test]
     fn compose_immutable_fixed_strings_test() {
-        for s in EXAMINEE_IMMUTABLE.iter() {
+        for s in EXAMINEE_IMMUTABLE {
             let converted = compose_from_hfs_nfd(*s);
             assert_eq!(&converted, *s);
         }
     }
     #[test]
     fn decompose_immutable_fixed_strings_test() {
-        for s in EXAMINEE_IMMUTABLE.iter() {
+        for s in EXAMINEE_IMMUTABLE {
             let converted = decompose_into_hfs_nfd(*s);
             assert_eq!(&converted, *s);
         }

@@ -94,34 +94,37 @@ pub fn decomopse_hangul_syllable(syllable: char) -> String {
 #[cfg(test)]
 mod test {
     use super::*;
-    use lazy_static::lazy_static;
 
-    lazy_static! {
-        // (NFC, NFD)
-        static ref EXAMINEE: Vec<(&'static str, &'static str)> = vec![
-            ("김갑환", "김갑환"),
-            ("장거한", "장거한"),
-            ("최번개", "최번개"),
-            ("한주리", "한주리"),
-            ("판문점", "판문점"),
-            ("남대문시장", "남대문시장"),
-            ("서울역", "서울역"),
-            ("김치", "김치"),
-            ("지짐이", "지짐이"),
-            ("국밥", "국밥"),
-            ("물냉면", "물냉면"),
-            ("비빔밥", "비빔밥"),
-            ("삼성전자", "삼성전자"),
-        ];
-        static ref MIXED_EXAMINEE: Vec<(&'static str, &'static str)> = vec![
-            ("《펌프 잇 업》(Pump It Up), 줄여서 펌프, 펌피럽은 안다미로가 개발한 리듬 게임이다.", "《펌프 잇 업》(Pump It Up), 줄여서 펌프, 펌피럽은 안다미로가 개발한 리듬 게임이다."),
-            ("태권도 관장. 정의를 중시하며 악을 용서치 않는 무슨 일이든 진지한 성격의 소유자.", "태권도 관장. 정의를 중시하며 악을 용서치 않는 무슨 일이든 진지한 성격의 소유자.")
-        ];
-    }
+    // (NFC, NFD)
+    static EXAMINEE: &[(&'static str, &'static str)] = &[
+        ("김갑환", "김갑환"),
+        ("장거한", "장거한"),
+        ("최번개", "최번개"),
+        ("한주리", "한주리"),
+        ("판문점", "판문점"),
+        ("남대문시장", "남대문시장"),
+        ("서울역", "서울역"),
+        ("김치", "김치"),
+        ("지짐이", "지짐이"),
+        ("국밥", "국밥"),
+        ("물냉면", "물냉면"),
+        ("비빔밥", "비빔밥"),
+        ("삼성전자", "삼성전자"),
+    ];
+    static MIXED_EXAMINEE: &[(&'static str, &'static str)] = &[
+        (
+            "《펌프 잇 업》(Pump It Up), 줄여서 펌프, 펌피럽은 안다미로가 개발한 리듬 게임이다.",
+            "《펌프 잇 업》(Pump It Up), 줄여서 펌프, 펌피럽은 안다미로가 개발한 리듬 게임이다.",
+        ),
+        (
+            "태권도 관장. 정의를 중시하며 악을 용서치 않는 무슨 일이든 진지한 성격의 소유자.",
+            "태권도 관장. 정의를 중시하며 악을 용서치 않는 무슨 일이든 진지한 성격의 소유자.",
+        ),
+    ];
 
     #[test]
     fn hangul_precomposed_test() {
-        for (composed, decomposed) in &*EXAMINEE {
+        for (composed, decomposed) in EXAMINEE {
             assert!(composed
                 .chars()
                 .all(|ch| is_hangul_precomposed_syllable(ch)));
@@ -132,7 +135,7 @@ mod test {
     }
     #[test]
     fn hangul_jamo_test() {
-        for (composed, decomposed) in &*EXAMINEE {
+        for (composed, decomposed) in EXAMINEE {
             assert!(decomposed.chars().all(|ch| is_hangul_conjoinable_jamo(ch)));
             assert!(composed.chars().all(|ch| !is_hangul_conjoinable_jamo(ch)));
         }
@@ -140,14 +143,14 @@ mod test {
 
     #[test]
     fn hangul_decomposition_test() {
-        for (composed, decomposed) in &*EXAMINEE {
+        for (composed, decomposed) in EXAMINEE {
             let genrated = composed
                 .chars()
                 .map(|ch| decomopse_hangul_syllable(ch))
                 .collect::<String>();
             assert_eq!(&genrated, decomposed);
         }
-        for (composed, decomposed) in &*MIXED_EXAMINEE {
+        for (composed, decomposed) in MIXED_EXAMINEE {
             let genrated = composed
                 .chars()
                 .map(|ch| decomopse_hangul_syllable(ch))
@@ -158,10 +161,10 @@ mod test {
 
     #[test]
     fn hangul_composition_test() {
-        for (composed, decomposed) in &*EXAMINEE {
+        for (composed, decomposed) in EXAMINEE {
             assert_eq!(&compose_hangul_jamos(decomposed), composed);
         }
-        for (composed, decomposed) in &*MIXED_EXAMINEE {
+        for (composed, decomposed) in MIXED_EXAMINEE {
             assert_eq!(&compose_hangul_jamos(decomposed), composed);
         }
     }
