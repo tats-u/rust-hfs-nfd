@@ -9,7 +9,6 @@ use hangul::{
     is_hangul_precomposed_syllable,
 };
 use reverse_tree::ReverseTreeNode;
-use std::borrow::Cow;
 
 /// Applies the Unicode decomposition similar to NFD used in HFS+
 ///
@@ -23,8 +22,7 @@ use std::borrow::Cow;
 /// use hfs_nfd::decompose_into_hfs_nfd;
 /// assert_eq!(&decompose_into_hfs_nfd("Pok\u{00E9}mon"), "Poke\u{0301}mon");
 /// ```
-pub fn decompose_into_hfs_nfd<'a, S: Into<Cow<'a, str>>>(input: S) -> String {
-    let input = input.into();
+pub fn decompose_into_hfs_nfd(input: &str) -> String {
     let mut result = String::new();
 
     for c in input.chars() {
@@ -54,8 +52,7 @@ pub fn decompose_into_hfs_nfd<'a, S: Into<Cow<'a, str>>>(input: S) -> String {
 /// use hfs_nfd::compose_from_hfs_nfd;
 /// assert_eq!(&compose_from_hfs_nfd("Poke\u{0301}mon"), "Pok\u{00E9}mon");
 /// ```
-pub fn compose_from_hfs_nfd<'a, S: Into<Cow<'a, str>>>(input: S) -> String {
-    let input = input.into();
+pub fn compose_from_hfs_nfd(input: &str) -> String {
     let mut result = String::new();
     let mut referencing_dict = &*MAP_TO_NORMAL;
     let mut pending_chars = String::new();
