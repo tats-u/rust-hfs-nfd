@@ -1,7 +1,7 @@
 # Apple HFS+ NFD-like Unicode Normalization Library for Rust
 
-![CI (master)](<https://github.com/tats-u/rust-hfs-nfd/workflows/CI%20(master)/badge.svg>)
-![CI (Release)](<https://github.com/tats-u/rust-hfs-nfd/workflows/CI%20(Release)/badge.svg>)
+[![CI (master)](<https://github.com/tats-u/rust-hfs-nfd/workflows/CI%20(master)/badge.svg>)](https://github.com/tats-u/rust-hfs-nfd/actions/workflows/master.yml)
+[![CI (Release)](<https://github.com/tats-u/rust-hfs-nfd/workflows/CI%20(Release)/badge.svg>)](https://github.com/tats-u/rust-hfs-nfd/actions/workflows/release.yml)
 [![hfs_nfd at crates.io](https://img.shields.io/crates/v/hfs_nfd.svg)](https://crates.io/crates/hfs_nfd)
 [![hfs_nfd at docs.rs](https://docs.rs/hfs_nfd/badge.svg)](https://docs.rs/hfs_nfd)
 
