@@ -24,7 +24,7 @@ Add this library `hfs_nfd` to your `Cargo.toml`.
 another_library1 = "<version>"
 another_library2 = "<version>"
 # *snip*
-hfs_nfd = "1.0.0" # <= Here
+hfs_nfd = "2.0.0" # <= Here
 # *snip*
 ```
 
