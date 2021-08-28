@@ -17,3 +17,6 @@ keywords = ["hfs", "apple", "encoding", "unicode", "normalization"]
 thiserror = "1.0.26"
 lazy_static = "1.4.0"
 ahash = "0.7.4"
+
+[features]
+bench = []

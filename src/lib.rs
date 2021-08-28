@@ -1,3 +1,6 @@
+#![cfg_attr(feature = "bench", feature(test))]
+#[cfg(feature = "bench")]
+extern crate test;
 mod code_table;
 #[cfg(test)]
 mod code_table_test;
@@ -165,6 +168,8 @@ pub fn compose_from_hfs_nfd(input: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[cfg(feature = "bench")]
+    use test::Bencher;
     static EXAMINEE: &[(&'static str, &'static str)] = &[
             ("Pokémonポケモン", "Pokémonポケモン"),
             ("ポプテピピック", "ポプテピピック"),
@@ -233,5 +238,27 @@ mod tests {
             let converted = decompose_into_hfs_nfd(*s);
             assert_eq!(&converted, *s);
         }
+    }
+
+    #[cfg(feature = "bench")]
+    fn join_all_materials() -> String {
+        EXAMINEE
+            .iter()
+            .map(|(nfc, nfd)| nfc.to_string() + nfd)
+            .collect::<String>()
+            + &(EXAMINEE_IMMUTABLE.iter().map(|s| *s).collect::<String>())
+    }
+    #[cfg(feature = "bench")]
+    #[bench]
+    fn compose_bench(b: &mut Bencher) {
+        let input = join_all_materials();
+        b.iter(|| compose_from_hfs_nfd(&input));
+    }
+
+    #[cfg(feature = "bench")]
+    #[bench]
+    fn decompose_bench(b: &mut Bencher) {
+        let input = join_all_materials();
+        b.iter(|| decompose_into_hfs_nfd(&input));
     }
 }
