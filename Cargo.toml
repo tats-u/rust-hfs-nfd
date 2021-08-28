@@ -14,6 +14,6 @@ keywords = ["hfs", "apple", "encoding", "unicode", "normalization"]
 
 
 [dependencies]
-thiserror = "1.0.20"
-lazy_static = "1.1.1"
-ahash = "0.4.5"
+thiserror = "1.0.26"
+lazy_static = "1.4.0"
+ahash = "0.7.4"
