@@ -7,15 +7,15 @@
 
 HFS+, the file system formerly used in Apple macOS, uses a unique Unicode normalization similar to NFD.
 
-- https://developer.apple.com/library/archive/technotes/tn/tn1150table.html
-- https://developer.apple.com/library/archive/technotes/tn/tn1150.html
+- <https://developer.apple.com/library/archive/technotes/tn/tn1150table.html>
+- <https://developer.apple.com/library/archive/technotes/tn/tn1150.html>
 
 This library composes or decomposes Unicode code points according to the normalization. e.g.
 
 - Université[`U+00E9`] de Paris (Common) ⇔ Université[`U+0065 U+0301`] de Paris (HFS+)
 - アップ[`U+30D7`]ル (Common) ⇔ アップ[`U+30D5 U+309A`]ル (HFS+)
 
-# How to use
+## How to use
 
 Add this library `hfs_nfd` to your `Cargo.toml`.
 
