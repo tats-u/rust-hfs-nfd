@@ -18,11 +18,11 @@ jobs:
           - macos-latest
           - windows-latest
     steps:
-    - uses: actions/checkout@v2
-    - uses: actions-rs/toolchain@v1
+    - uses: actions/checkout@v3
+    - uses: dtolnay/rust-toolchain@stable
       with:
         toolchain: stable
-    - uses: actions/cache@v2
+    - uses: actions/cache@v3
       with:
         path: |
           ~/.cargo/registry
@@ -32,10 +32,7 @@ jobs:
           target/.rustc_info.json
         key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
     - name: Test 
-      uses: actions-rs/cargo@v1
-      with:
-        command: test
-        args: --verbose
+      run: cargo test --verbose
         # don't test `bench` feature (requires nightly toolchain)
         # args: --verbose --all-features
   release:
@@ -43,7 +40,7 @@ jobs:
     needs:
       - test-again
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Create a Release
       id: create_release
       uses: actions/create-release@v1
@@ -57,9 +54,9 @@ jobs:
     - name: Get the version
       id: get_version
       run: |
-        echo ::set-output name=VERSION::${GITHUB_REF#refs/tags/}
-        echo ::set-output name=DEB_NAME::$(basename $(ls ${{ runner.temp }}/deb-package/*.deb | tail -n 1))
-    - uses: actions/cache@v2
+        echo VERSION=${GITHUB_REF#refs/tags/} >> $GITHUB_OUTPUT
+        echo DEB_NAME=$(basename $(ls ${{ runner.temp }}/deb-package/*.deb | tail -n 1)) >> $GITHUB_OUTPUT
+    - uses: actions/cache@v3
       with:
         path: |
           ~/.cargo/registry
@@ -68,11 +65,8 @@ jobs:
           target/debug
           target/.rustc_info.json
         key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-    - uses: actions-rs/toolchain@v1
+    - uses: dtolnay/rust-toolchain@stable
       with:
         toolchain: stable
     - name: Upload crate
-      uses: actions-rs/cargo@v1
-      with:
-        command: publish
-        args: --token ${{ secrets.CARGO_TOKEN }}
+      run: cargo publish --token ${{ secrets.CARGO_TOKEN }}
